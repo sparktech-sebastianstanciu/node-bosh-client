@@ -94,4 +94,12 @@ describe('Director', function () {
         });
     });
 
+    it('should query BOSH for a single release\'s info', function (done) {
+        client.getRelease('test', function (err, body) {
+            assert(!err, err);
+            assert.deepEqual(requestOptions, {url: boshUrl + 'releases/test'});
+            done();
+        });
+    });
+
 });
