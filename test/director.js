@@ -1,9 +1,13 @@
-var  assert = require('assert');
+var assert = require('assert'),
+    EventEmitter = require('events').EventEmitter;
 
 describe('Director', function () {
     var mockery,
         client,
         Director,
+        requestOptions,
+        requestCallback,
+        requests = new EventEmitter(),
         boshUrl = 'http://api.bosh.local.me/',
         user = {id: '123'},
         userToken = 'dXNlcjpzZWNyZXQ=',
@@ -21,7 +25,14 @@ describe('Director', function () {
         };
 
     before(function (done) {
-        require('./nock');
+        mockery = require('mockery');
+        mockery.enable({ useCleanCache: true,
+            warnOnUnregistered: false });
+
+        mockery.registerMock('request', function (obj, callback) {
+            requests.emit('request', obj);
+            requestCallback(obj, callback);
+        });
 
         Director = require('../lib/director');
 
@@ -33,12 +44,28 @@ describe('Director', function () {
             boshPassword: boshPassword,
             stageName: stageName
         });
+
+        requestCallback = function (obj, callback) {
+            callback(null, { statusCode: 200 });
+        };
+
+        requests.addListener('request', function (options) {
+            requestOptions = options;
+        });
+        
+        done();
+    });
+
+    after(function (done) {
+        mockery.disable();
+        requests.removeAllListeners();
         done();
     });
 
     it('should query BOSH for status info', function (done) {
         client.getStatus(function (err, body) {
             assert(!err, err);
+            assert.deepEqual(requestOptions, {url: boshUrl + 'info'});
             done();
         });
     });
@@ -46,6 +73,7 @@ describe('Director', function () {
     it('should query BOSH for stemcell info', function (done) {
         client.stemcells(function (err, body) {
             assert(!err, err);
+            assert.deepEqual(requestOptions, {url: boshUrl + 'stemcells'});
             done();
         });
     });
@@ -53,6 +81,7 @@ describe('Director', function () {
     it('should query BOSH for release info', function (done) {
         client.getReleases(function (err, body) {
             assert(!err, err);
+            assert.deepEqual(requestOptions, {url: boshUrl + 'releases'});
             done();
         });
     });
@@ -60,6 +89,7 @@ describe('Director', function () {
     it('should query BOSH for deployments info', function (done) {
         client.getDeployments(function (err, body) {
             assert(!err, err);
+            assert.deepEqual(requestOptions, {url: boshUrl + 'deployments'});
             done();
         });
     });
