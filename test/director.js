@@ -50,4 +50,18 @@ describe('Director', function () {
         });
     });
 
+    it('should query BOSH for release info', function (done) {
+        client.getReleases(function (err, body) {
+            assert(!err, err);
+            done();
+        });
+    });
+
+    it('should query BOSH for deployments info', function (done) {
+        client.getDeployments(function (err, body) {
+            assert(!err, err);
+            done();
+        });
+    });
+
 });
