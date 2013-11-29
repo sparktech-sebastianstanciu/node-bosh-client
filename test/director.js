@@ -1,5 +1,8 @@
-var assert = require('assert'),
-    EventEmitter = require('events').EventEmitter;
+var assert          = require('assert'),
+    EventEmitter    = require('events').EventEmitter,
+    util            = require('util'),
+    btoa            = require('btoa');
+
 
 describe('Director', function () {
     var mockery,
@@ -98,6 +101,92 @@ describe('Director', function () {
         client.getRelease('test', function (err, body) {
             assert(!err, err);
             assert.deepEqual(requestOptions, {url: boshUrl + 'releases/test'});
+            done();
+        });
+    });
+
+    it('should call BOSH to delete a release', function (done) {
+        var name = 'testing',
+            opt = {force: true, version: 11};
+        client.deleteRelease(name, opt, function (err, body) {
+            assert(!err, err);
+            assert.deepEqual(requestOptions, {
+                method: 'DELETE',
+                url: boshUrl + util.format('releases/%s', name),
+                qs: opt,
+                followRedirect: false
+            });
+            done();
+        });
+    });
+
+    it('should call BOSH to create a deployment', function (done) {
+        var yml = 'name: testing\n' +
+        'director_uuid: 0a00a000-00aa-0000-0aaa-00000000a000';
+        client.deploy(btoa(yml), function (err, body) {
+            assert(!err, err);
+            assert.deepEqual(requestOptions, {
+                headers: {
+                    'Content-Type': 'text/yaml',
+                    authorization: 'Basic ' + userToken
+                },
+                method: 'POST',
+                url: boshUrl + 'deployments',
+                body: yml,
+                followRedirect: false
+            });
+            done();
+        });
+    });
+
+    it('should call BOSH to delete a deployment', function (done) {
+        var deployment = 'testing',
+            force = false;
+        client.deleteDeployment(deployment, force, function (err, body) {
+            assert(!err, err);
+            assert.deepEqual(requestOptions, {
+                method: 'DELETE',
+                url: boshUrl + 'deployments/' + deployment,
+                followRedirect: false
+            });
+            done();
+        });
+    });
+
+    it('should query BOSH for a list of recent tasks', function (done) {
+        var limit = 11,
+            verbose = 0;
+        client.getRecentTasks(limit, verbose, function (err, body) {
+            assert(!err, err);
+            assert.deepEqual(requestOptions, {url: boshUrl + 'tasks',
+            qs: {limit: limit, verbose: verbose}});
+            done();
+        });
+    });
+
+    it('should query BOSH for a list of running tasks', function (done) {
+        var verbose = 0;
+        client.getRunningTasks(verbose, function (err, body) {
+            assert(!err, err);
+            assert.deepEqual(requestOptions, { url: boshUrl + 'tasks',
+                qs: {verbose: verbose,
+                    state: ['processing', 'cancelling', 'queued']}});
+            done();
+        });
+    });
+
+    it('should call BOSH to delete a stemcell', function (done) {
+        var force = true,
+            name = 'test-1',
+            version = 2;
+
+        client.deleteStemcell(name, version, force, function (err, body) {
+            assert(!err, err);
+            assert.deepEqual(requestOptions, {qs: {force: true},
+                method: 'DELETE',
+                followRedirect: false,
+                url: boshUrl +
+                util.format('stemcells/%s/%s', name, version)});
             done();
         });
     });
