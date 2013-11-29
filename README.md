@@ -1,2 +1,3 @@
-node-bosh-client
+# Cloudfoundry BOSH client
+
 ================

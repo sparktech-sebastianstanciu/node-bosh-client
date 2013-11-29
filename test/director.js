@@ -249,4 +249,21 @@ describe('Director', function () {
         });
     });
 
+    it('should call BOST to create a snapshot', function (done) {
+        var job = 2,
+            index = 3;
+        client.takeSnapshot(deploymentName, {job: job, index: index},
+        function (err, body) {
+            assert(!err, err);
+            assert.deepEqual(requestOptions, {
+                method: 'POST',
+                followRedirect: false,
+                url: boshUrl +
+                util.format('deployments/%s/jobs/%s/%s/snapshots',
+                    deploymentName, job, index)
+            });
+            done();
+        });
+    });
+
 });
