@@ -25,7 +25,10 @@ describe('Director', function () {
                 'Content-Type': 'application/json',
                 authorization: 'Basic ' + userToken
             }
-        };
+        },
+        deploymentName = 'test-deployment',
+        propertyName = 'test',
+        propertyValue = 'true';
 
     before(function (done) {
         mockery = require('mockery');
@@ -187,6 +190,61 @@ describe('Director', function () {
                 followRedirect: false,
                 url: boshUrl +
                 util.format('stemcells/%s/%s', name, version)});
+            done();
+        });
+    });
+
+    it('should call BOSH to create a deployment property', function (done) {
+        client.createProperty(deploymentName, propertyName, propertyValue,
+        function (err, body) {
+            assert(!err, err);
+            assert.deepEqual(requestOptions, {
+                method: 'POST',
+                body: JSON.stringify({name: propertyName,
+                    value: propertyValue}),
+                url: boshUrl + util.format('deployments/%s/properties',
+                    deploymentName)
+            });
+            done();
+        });
+    });
+
+    it('should call BOSH to get a deployment property', function (done) {
+        client.getProperty(deploymentName, propertyName, function (err, body) {
+            assert(!err, err);
+            assert.deepEqual(requestOptions, {
+                url: boshUrl + util.format('deployments/%s/properties/%s',
+                    deploymentName, propertyName)
+            });
+            done();
+        });
+    });
+
+    it('should call BOSH to update a deployment property', function (done) {
+        propertyValue = 'false';
+
+        client.updateProperty(deploymentName, propertyName, propertyValue,
+        function (err, body) {
+            assert(!err, err);
+            assert.deepEqual(requestOptions, {
+                method: 'PUT',
+                url: boshUrl + util.format('deployments/%s/properties/%s',
+                deploymentName, propertyName),
+                body: JSON.stringify({value: propertyValue})
+            });
+            done();
+        });
+    });
+
+    it('should call BOSH to delete a deployment property', function (done) {
+        client.deleteProperty(deploymentName, propertyName,
+            function (err, body) {
+            assert(!err, err);
+            assert.deepEqual(requestOptions, {
+                url: boshUrl + util.format('deployments/%s/properties/%s',
+                    deploymentName, propertyName),
+                method: 'DELETE'
+            });
             done();
         });
     });
